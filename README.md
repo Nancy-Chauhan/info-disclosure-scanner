@@ -6,6 +6,8 @@ An AI-powered security scanner that detects sensitive information leakage in web
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![AI Powered](https://img.shields.io/badge/AI-Claude%20Powered-blueviolet.svg)
 
+![Screenshot](screenshot.png)
+
 ## Features
 
 - **AI-Powered Analysis** - Uses Claude AI to intelligently identify information disclosure vulnerabilities
