@@ -1,0 +1,2229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Scan Report - http://localhost:3000</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #334155;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --severity-high: #ef4444;
+            --severity-medium: #f59e0b;
+            --severity-low: #3b82f6;
+            --severity-info: #06b6d4;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .report-header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .report-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .brand-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .brand-text span {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .report-meta {
+            text-align: right;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .report-meta .date {
+            color: var(--text-muted);
+        }
+
+        .target-info {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .target-info .label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .target-info .url {
+            color: var(--accent-blue);
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Stats Grid */
+        .stats-section {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .risk-score-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .risk-score-card h3 {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .risk-gauge {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 1rem;
+        }
+
+        .risk-gauge svg {
+            transform: rotate(-90deg);
+        }
+
+        .risk-gauge-bg {
+            fill: none;
+            stroke: var(--bg-tertiary);
+            stroke-width: 12;
+        }
+
+        .risk-gauge-fill {
+            fill: none;
+            stroke: #dc3545;
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 377;
+            stroke-dashoffset: 0.0;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .risk-score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .risk-score-value .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #dc3545;
+        }
+
+        .risk-score-value .label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .risk-level {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #dc354520;
+            color: #dc3545;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .severity-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        .severity-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .severity-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .severity-card.active {
+            border-color: var(--accent-blue);
+        }
+
+        .severity-card .count {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .severity-card.high .count { color: var(--severity-high); }
+        .severity-card.medium .count { color: var(--severity-medium); }
+        .severity-card.low .count { color: var(--severity-low); }
+        .severity-card.info .count { color: var(--severity-info); }
+
+        .severity-card .label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .severity-card .bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .severity-card .bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        .severity-card.high .bar-fill { background: var(--severity-high); }
+        .severity-card.medium .bar-fill { background: var(--severity-medium); }
+        .severity-card.low .bar-fill { background: var(--severity-low); }
+        .severity-card.info .bar-fill { background: var(--severity-info); }
+
+        /* Findings Section */
+        .findings-section {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .findings-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .findings-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+
+        .findings-list {
+            padding: 1rem;
+        }
+
+        .finding {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .finding:hover {
+            border-color: var(--text-muted);
+        }
+
+        .finding.high { border-left: 3px solid var(--severity-high); }
+        .finding.medium { border-left: 3px solid var(--severity-medium); }
+        .finding.low { border-left: 3px solid var(--severity-low); }
+        .finding.info { border-left: 3px solid var(--severity-info); }
+
+        .finding-header {
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .finding-header:hover {
+            background: var(--bg-secondary);
+        }
+
+        .severity-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .severity-badge.high { background: var(--severity-high)20; color: var(--severity-high); }
+        .severity-badge.medium { background: var(--severity-medium)20; color: var(--severity-medium); }
+        .severity-badge.low { background: var(--severity-low)20; color: var(--severity-low); }
+        .severity-badge.info { background: var(--severity-info)20; color: var(--severity-info); }
+
+        .finding-title {
+            flex: 1;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .finding-category {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .toggle-icon {
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+
+        .finding.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .finding.collapsed .finding-body {
+            display: none;
+        }
+
+        .finding-body {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+
+        .finding-body p {
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .finding-body strong {
+            color: var(--text-primary);
+        }
+
+        .evidence {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 1rem;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #e6edf3;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Footer */
+        .report-footer {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .report-footer a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .report-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            .container {
+                max-width: 100%;
+            }
+            .finding {
+                break-inside: avoid;
+            }
+            .filter-buttons {
+                display: none;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .stats-section {
+                grid-template-columns: 1fr;
+            }
+            .severity-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header-top {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .report-meta {
+                text-align: left;
+            }
+            .severity-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .filter-buttons {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="report-header">
+            <div class="header-top">
+                <div class="brand">
+                    <div class="brand-icon">🛡️</div>
+                    <div class="brand-text">
+                        <h1>Security Scan Report</h1>
+                        <span>Information Disclosure Assessment</span>
+                    </div>
+                </div>
+                <div class="report-meta">
+                    <div>Report Generated</div>
+                    <div class="date">January 19, 2026 at 12:19:55</div>
+                </div>
+            </div>
+            <div class="target-info">
+                <span class="label">Target:</span>
+                <span class="url">http://localhost:3000</span>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <div class="risk-score-card">
+                <h3>Risk Score</h3>
+                <div class="risk-gauge">
+                    <svg width="160" height="160" viewBox="0 0 160 160">
+                        <circle class="risk-gauge-bg" cx="80" cy="80" r="60"/>
+                        <circle class="risk-gauge-fill" cx="80" cy="80" r="60"/>
+                    </svg>
+                    <div class="risk-score-value">
+                        <div class="number">100</div>
+                        <div class="label">/ 100</div>
+                    </div>
+                </div>
+                <span class="risk-level">Critical Risk</span>
+            </div>
+
+            <div class="severity-cards">
+                <div class="severity-card high" onclick="filterFindings('high')">
+                    <div class="count">14</div>
+                    <div class="label">High</div>
+                    <div class="bar"><div class="bar-fill" style="width: 17.073170731707318%"></div></div>
+                </div>
+                <div class="severity-card medium" onclick="filterFindings('medium')">
+                    <div class="count">33</div>
+                    <div class="label">Medium</div>
+                    <div class="bar"><div class="bar-fill" style="width: 40.243902439024396%"></div></div>
+                </div>
+                <div class="severity-card low" onclick="filterFindings('low')">
+                    <div class="count">7</div>
+                    <div class="label">Low</div>
+                    <div class="bar"><div class="bar-fill" style="width: 8.536585365853659%"></div></div>
+                </div>
+                <div class="severity-card info" onclick="filterFindings('info')">
+                    <div class="count">28</div>
+                    <div class="label">Info</div>
+                    <div class="bar"><div class="bar-fill" style="width: 34.146341463414636%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="findings-section">
+            <div class="findings-header">
+                <h2>Findings (82)</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterFindings('all')">All</button>
+                    <button class="filter-btn" onclick="filterFindings('high')">High</button>
+                    <button class="filter-btn" onclick="filterFindings('medium')">Medium</button>
+                    <button class="filter-btn" onclick="filterFindings('low')">Low</button>
+                    <button class="filter-btn" onclick="filterFindings('info')">Info</button>
+                </div>
+            </div>
+            <div class="findings-list">
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Git repository exposed - /.git/config</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/.git/config</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Git HEAD file exposed - /.git/HEAD</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/.git/HEAD</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Environment file exposed - /.env</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/.env</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">PHP config file - /config.php</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/config.php</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">PHP config backup - /config.php.bak</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/config.php.bak</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">YAML config file - /config.yml</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/config.yml</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">JSON config file - /config.json</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/config.json</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">IIS config exposed - /web.config</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/web.config</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Backup directory - /backup</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/backup</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Backup directory - /backup/</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/backup/</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Database dump - /db.sql</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/db.sql</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Database dump - /database.sql</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/database.sql</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Database dump - /dump.sql</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/dump.sql</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding high" data-severity="high">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge high">HIGH</span>
+                        <span class="finding-title">Password found in main.js</span>
+                        <span class="finding-category">JavaScript Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Sensitive data in JavaScript file: http://localhost:3000/main.js</p>
+                        <pre class="evidence">[(&#x27;password&#x27;, &#x27;password&#x27;), (&#x27;Password&#x27;, &#x27;IamUsedForTesting&#x27;)]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Debug endpoint - /debug</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/debug</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Debug directory - /debug/</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/debug/</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Admin panel - /admin</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/admin</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Administrator panel - /administrator</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/administrator</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Spring actuator - /actuator</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/actuator</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Spring health endpoint - /actuator/health</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/actuator/health</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Spring environment - /actuator/env</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/actuator/env</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Debug log - /debug.log</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/debug.log</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Products API - /api/Products</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/api/Products</p>
+                        <pre class="evidence">{&quot;status&quot;:&quot;success&quot;,&quot;data&quot;:[{&quot;id&quot;:1,&quot;name&quot;:&quot;Apple Juice (1000ml)&quot;,&quot;description&quot;:&quot;The all-time classic.&quot;,&quot;price&quot;:1.99,&quot;deluxePrice&quot;:0.99,&quot;image&quot;:&quot;apple_juice.jpg&quot;,&quot;createdAt&quot;:&quot;2026-01-19T15:32:25.795Z&quot;,&quot;updatedAt&quot;:&quot;2026-01-19T15:32:25.795Z&quot;,&quot;deletedAt&quot;:null},{&quot;id&quot;:2,&quot;name&quot;:&quot;Orange Juice (1000ml)&quot;,&quot;description&quot;:&quot;Made from oranges hand-picked by Uncle Dittmeyer.&quot;,&quot;price&quot;:2.99,&quot;deluxePrice&quot;:2.49,&quot;image&quot;:&quot;orange_juice.jpg&quot;,&quot;createdAt&quot;:&quot;2026-01-19T15:32:25.795Z&quot;,&quot;updatedAt&quot;:&quot;2026-01-19T15:32:25.795Z&quot;,</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Feedbacks API - /api/Feedbacks</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/api/Feedbacks</p>
+                        <pre class="evidence">{&quot;status&quot;:&quot;success&quot;,&quot;data&quot;:[{&quot;UserId&quot;:1,&quot;id&quot;:1,&quot;comment&quot;:&quot;I love this shop! Best products in town! Highly recommended! (***in@juice-sh.op)&quot;,&quot;rating&quot;:5,&quot;createdAt&quot;:&quot;2026-01-19T15:32:24.918Z&quot;,&quot;updatedAt&quot;:&quot;2026-01-19T15:32:24.918Z&quot;},{&quot;UserId&quot;:2,&quot;id&quot;:2,&quot;comment&quot;:&quot;Great shop! Awesome service! (***@juice-sh.op)&quot;,&quot;rating&quot;:4,&quot;createdAt&quot;:&quot;2026-01-19T15:32:24.919Z&quot;,&quot;updatedAt&quot;:&quot;2026-01-19T15:32:24.919Z&quot;},{&quot;UserId&quot;:3,&quot;id&quot;:3,&quot;comment&quot;:&quot;Nothing useful available here! (***der@juice-sh.op)&quot;,&quot;rating&quot;:1,&quot;created</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via SQL error trigger (quote)</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id=&#x27;</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via SQL error trigger (comment)</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id=1&#x27;--</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via SQL error trigger (OR)</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id=1 OR 1=1</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Path traversal test</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?file=../../../etc/passwd</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Path traversal bypass</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?page=....//....//etc/passwd</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Array parameter</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id[]=1</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Null value</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id=null</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Undefined value</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id=undefined</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Negative ID</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id=-1</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Large ID</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id=99999999</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Zero ID</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?id=0</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via XSS probe</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?q=&lt;script&gt;</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via SSTI probe</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?q={{7*7}}</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via Expression injection</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/?q=${7*7}</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via 404 error page</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/nonexistent12345</p>
+                        <pre class="evidence">[&#x27;error&#x27;, &#x27;error&#x27;, &#x27;error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Stack trace exposed via API 404 error</span>
+                        <span class="finding-category">Error Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Verbose error found at: http://localhost:3000/api/nonexistent12345</p>
+                        <pre class="evidence">[&#x27;Error&#x27;, &#x27;Error&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Developer comment found in vendor.js</span>
+                        <span class="finding-category">JavaScript Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Sensitive data in JavaScript file: http://localhost:3000/vendor.js</p>
+                        <pre class="evidence">[&#x27;todo&#x27;, &#x27;ToDo&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Debug logging found in vendor.js</span>
+                        <span class="finding-category">JavaScript Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Sensitive data in JavaScript file: http://localhost:3000/vendor.js</p>
+                        <pre class="evidence">[&#x27;log&#x27;, &#x27;log&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Secret/Token found in main.js</span>
+                        <span class="finding-category">JavaScript Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Sensitive data in JavaScript file: http://localhost:3000/main.js</p>
+                        <pre class="evidence">[(&#x27;token&#x27;, &#x27;+e)}saveLastLoginIp(){return this.http.get(this.hostServer+&#x27;), (&#x27;token&#x27;, &#x27;)?{consumed:n}:null},data:{params:window.location.href.substr(window.location.href.indexOf(&#x27;)]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Developer comment found in main.js</span>
+                        <span class="finding-category">JavaScript Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Sensitive data in JavaScript file: http://localhost:3000/main.js</p>
+                        <pre class="evidence">[&#x27;Hack&#x27;, &#x27;Hack&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">Debug logging found in main.js</span>
+                        <span class="finding-category">JavaScript Disclosure</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Sensitive data in JavaScript file: http://localhost:3000/main.js</p>
+                        <pre class="evidence">[&#x27;log&#x27;, &#x27;log&#x27;]</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">[AI] Technology Stack Details</span>
+                        <span class="finding-category">AI Analysis</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Application identifies itself as OWASP Juice Shop, revealing it&#x27;s an intentionally vulnerable application</p>
+                        <pre class="evidence">&lt;title&gt;OWASP Juice Shop&lt;/title&gt; and &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;</pre>
+                    </div>
+                </div>
+                
+                <div class="finding medium" data-severity="medium">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge medium">MEDIUM</span>
+                        <span class="finding-title">[AI] Internal path disclosure</span>
+                        <span class="finding-category">AI Analysis</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Robots.txt reveals the existence of an internal /ftp directory that may contain sensitive files or provide unauthorized access to file transfer functionality</p>
+                        <pre class="evidence">Disallow: /ftp</pre>
+                    </div>
+                </div>
+                
+                <div class="finding low" data-severity="low">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge low">LOW</span>
+                        <span class="finding-title">Robots.txt file - /robots.txt</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/robots.txt</p>
+                        <pre class="evidence">User-agent: *
+Disallow: /ftp</pre>
+                    </div>
+                </div>
+                
+                <div class="finding low" data-severity="low">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge low">LOW</span>
+                        <span class="finding-title">Sitemap file - /sitemap.xml</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/sitemap.xml</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding low" data-severity="low">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge low">LOW</span>
+                        <span class="finding-title">NPM package file - /package.json</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/package.json</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding low" data-severity="low">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge low">LOW</span>
+                        <span class="finding-title">[AI] Copyright Information</span>
+                        <span class="finding-category">AI Analysis</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> HTML comment reveals copyright information and project contributors</p>
+                        <pre class="evidence">&lt;!-- ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors. ~ SPDX-License-Identifier: MIT --&gt;</pre>
+                    </div>
+                </div>
+                
+                <div class="finding low" data-severity="low">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge low">LOW</span>
+                        <span class="finding-title">[AI] Technology Stack Details</span>
+                        <span class="finding-category">AI Analysis</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> External CDN dependencies reveal technology choices and versions</p>
+                        <pre class="evidence">//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/3.1.0/ and //cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js</pre>
+                    </div>
+                </div>
+                
+                <div class="finding low" data-severity="low">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge low">LOW</span>
+                        <span class="finding-title">[AI] Internal Paths</span>
+                        <span class="finding-category">AI Analysis</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Local asset paths exposed in HTML</p>
+                        <pre class="evidence">href=&quot;assets/public/favicon_js.ico&quot;</pre>
+                    </div>
+                </div>
+                
+                <div class="finding low" data-severity="low">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge low">LOW</span>
+                        <span class="finding-title">[AI] Technology Stack Details</span>
+                        <span class="finding-category">AI Analysis</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Frontend framework information revealed through CSS variables and styling</p>
+                        <pre class="evidence">Angular Material design system variables: --mat-sys-on-surface, --mat-app-background-color, etc.</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Missing X-XSS-Protection header</span>
+                        <span class="finding-category">Missing Security Header</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> The X-XSS-Protection header is not set</p>
+                        
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Missing Strict-Transport-Security header</span>
+                        <span class="finding-category">Missing Security Header</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> The Strict-Transport-Security header is not set</p>
+                        
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Missing Content-Security-Policy header</span>
+                        <span class="finding-category">Missing Security Header</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> The Content-Security-Policy header is not set</p>
+                        
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">SVN repository exposed - /.svn/entries</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/.svn/entries</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Mercurial repository exposed - /.hg/hgrc</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/.hg/hgrc</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Django settings exposed - /settings.py</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/settings.py</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Apache htaccess exposed - /.htaccess</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/.htaccess</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Nginx config exposed - /nginx.conf</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/nginx.conf</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Flash crossdomain policy - /crossdomain.xml</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/crossdomain.xml</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Silverlight policy - /clientaccesspolicy.xml</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/clientaccesspolicy.xml</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Security.txt file - /security.txt</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/security.txt</p>
+                        <pre class="evidence">Contact: mailto:donotreply@owasp-juice.shop
+Encryption: https://keybase.io/bkimminich/pgp_keys.asc?fingerprint=19c01cb7157e4645e9e2c863062a85a8cbfbdcda
+Acknowledgements: /#/score-board
+Preferred-languages: en, ar, az, bg, bn, ca, cs, da, de, ga, el, es, et, fi, fr, ka, he, hi, hu, id, it, ja, ko, lv, my, nl, no, pl, pt, ro, ru, si, sv, th, tr, uk, zh
+Hiring: /#/jobs
+Csaf: http://localhost:3000/.well-known/csaf/provider-metadata.json
+Expires: Tue, 19 Jan 2027 15:32:24 GMT</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Security.txt (well-known) - /.well-known/security.txt</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/.well-known/security.txt</p>
+                        <pre class="evidence">Contact: mailto:donotreply@owasp-juice.shop
+Encryption: https://keybase.io/bkimminich/pgp_keys.asc?fingerprint=19c01cb7157e4645e9e2c863062a85a8cbfbdcda
+Acknowledgements: /#/score-board
+Preferred-languages: en, ar, az, bg, bn, ca, cs, da, de, ga, el, es, et, fi, fr, ka, he, hi, hu, id, it, ja, ko, lv, my, nl, no, pl, pt, ro, ru, si, sv, th, tr, uk, zh
+Hiring: /#/jobs
+Csaf: http://localhost:3000/.well-known/csaf/provider-metadata.json
+Expires: Tue, 19 Jan 2027 15:32:24 GMT</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">PHP info page - /phpinfo.php</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/phpinfo.php</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">PHP info page - /info.php</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/info.php</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Console access - /console</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/console</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Swagger JSON - /swagger.json</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/swagger.json</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">macOS metadata - /.DS_Store</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/.DS_Store</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Windows thumbnails - /Thumbs.db</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/Thumbs.db</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Logs directory - /logs</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/logs</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Log directory - /log</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/log</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Error log - /error.log</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/error.log</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Access log - /access.log</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/access.log</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">NPM lock file - /package-lock.json</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/package-lock.json</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Composer file - /composer.json</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/composer.json</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Ruby Gemfile - /Gemfile</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/Gemfile</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Python requirements - /requirements.txt</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/requirements.txt</p>
+                        <pre class="evidence">&lt;!--
+  ~ Copyright (c) 2014-2026 Bjoern Kimminich &amp; the OWASP Juice Shop contributors.
+  ~ SPDX-License-Identifier: MIT
+  --&gt;
+
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-beasties-container&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;title&gt;OWASP Juice Shop&lt;/title&gt;
+  &lt;meta name=&quot;description&quot; content=&quot;Probably the most modern and sophisticated insecure web application&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+  &lt;link id=&quot;favicon&quot; rel=&quot;icon&quot; type=&quot;image/x-icon&quot; href=&quot;assets/public/f</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">FTP directory (Juice Shop) - /ftp</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/ftp</p>
+                        <pre class="evidence">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;meta charset=&#x27;utf-8&#x27;&gt; 
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no&quot; /&gt;
+    &lt;title&gt;listing directory /ftp&lt;/title&gt;
+    &lt;style&gt;* {
+  margin: 0;
+  padding: 0;
+  outline: 0;
+}
+
+body {
+  padding: 80px 100px;
+  font: 13px &quot;Helvetica Neue&quot;, &quot;Lucida Grande&quot;, &quot;Arial&quot;;
+  background: #ECE9E9 -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fff), to(#ECE9E9));
+  background: #ECE9E9 -moz-linear-gradient(top, #</pre>
+                    </div>
+                </div>
+                
+                <div class="finding info" data-severity="info">
+                    <div class="finding-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="severity-badge info">INFO</span>
+                        <span class="finding-title">Encryption keys (Juice Shop) - /encryptionkeys</span>
+                        <span class="finding-category">Sensitive Path</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                    <div class="finding-body">
+                        <p><strong>Description:</strong> Found accessible path: http://localhost:3000/encryptionkeys</p>
+                        <pre class="evidence">&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;meta charset=&#x27;utf-8&#x27;&gt; 
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no&quot; /&gt;
+    &lt;title&gt;listing directory /encryptionkeys&lt;/title&gt;
+    &lt;style&gt;* {
+  margin: 0;
+  padding: 0;
+  outline: 0;
+}
+
+body {
+  padding: 80px 100px;
+  font: 13px &quot;Helvetica Neue&quot;, &quot;Lucida Grande&quot;, &quot;Arial&quot;;
+  background: #ECE9E9 -webkit-gradient(linear, 0% 0%, 0% 100%, from(#fff), to(#ECE9E9));
+  background: #ECE9E9 -moz-linear-grad</pre>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+
+        <div class="report-footer">
+            Generated by <strong>Info Disclosure Scanner</strong> &middot; AI-Powered Security Analysis
+        </div>
+    </div>
+
+    <script>
+        function filterFindings(severity) {
+            const findings = document.querySelectorAll('.finding');
+            const buttons = document.querySelectorAll('.filter-btn');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            findings.forEach(finding => {
+                if (severity === 'all' || finding.dataset.severity === severity) {
+                    finding.style.display = 'block';
+                } else {
+                    finding.style.display = 'none';
+                }
+            });
+        }
+
+        // Collapse all findings by default except HIGH
+        document.querySelectorAll('.finding').forEach(f => {
+            if (!f.classList.contains('high')) {
+                f.classList.add('collapsed');
+            }
+        });
+    </script>
+</body>
+</html>
